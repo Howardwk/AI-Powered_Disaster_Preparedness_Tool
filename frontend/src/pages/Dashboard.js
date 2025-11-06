@@ -11,6 +11,7 @@ import {
   CardContent,
   CircularProgress,
   Alert,
+  Chip,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { disasterService } from '../services/disasterService';
@@ -101,15 +102,20 @@ const Dashboard = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Disaster Preparedness Dashboard
-      </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Get AI-powered disaster predictions for your location and generate
-        personalized response plans.
-      </Typography>
+      <Box sx={{ mb: 4, textAlign: 'center', bgcolor: 'primary.main', color: 'white', p: 4, borderRadius: 3, boxShadow: 3 }}>
+        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+          🌍 Disaster Preparedness Dashboard
+        </Typography>
+        <Typography variant="h6" sx={{ opacity: 0.9 }}>
+          AI-Powered Disaster Predictions & Response Planning
+        </Typography>
+      </Box>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      <Paper sx={{ p: 4, mb: 4, borderRadius: 3, boxShadow: 2 }}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
+          <LocationOnIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'primary.main' }} />
+          Search Location
+        </Typography>
         <form onSubmit={handleLocationSubmit}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
@@ -119,6 +125,7 @@ const Dashboard = () => {
                 placeholder="City name or coordinates (lat, lon)"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                variant="outlined"
                 InputProps={{
                   startAdornment: <LocationOnIcon sx={{ mr: 1, color: 'action.active' }} />,
                 }}
@@ -131,7 +138,8 @@ const Dashboard = () => {
                 type="number"
                 value={lat || ''}
                 onChange={(e) => setLat(e.target.value ? parseFloat(e.target.value) : null)}
-                placeholder="e.g., 40.7128"
+                placeholder="e.g., -1.2921"
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -141,7 +149,8 @@ const Dashboard = () => {
                 type="number"
                 value={lon || ''}
                 onChange={(e) => setLon(e.target.value ? parseFloat(e.target.value) : null)}
-                placeholder="e.g., -74.0060"
+                placeholder="e.g., 36.8219"
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12} md={2}>
@@ -150,9 +159,9 @@ const Dashboard = () => {
                 variant="contained"
                 type="submit"
                 disabled={loading}
-                sx={{ height: '56px' }}
+                sx={{ height: '56px', fontSize: '1rem', fontWeight: 600 }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Get Predictions'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Get Predictions'}
               </Button>
             </Grid>
           </Grid>
@@ -174,60 +183,71 @@ const Dashboard = () => {
       {predictions && (
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Overall Risk Level
+            <Card sx={{ bgcolor: 'primary.main', color: 'white', borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                  Overall Risk Assessment
                 </Typography>
-                <Box
-                  sx={{
-                    display: 'inline-block',
-                    px: 2,
-                    py: 1,
-                    borderRadius: 1,
-                    backgroundColor: getRiskColor(predictions.riskLevel),
-                    color: 'white',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {predictions.riskLevel.toUpperCase()}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Box
+                    sx={{
+                      display: 'inline-block',
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      backdropFilter: 'blur(10px)',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem',
+                    }}
+                  >
+                    {predictions.riskLevel.toUpperCase()}
+                  </Box>
+                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    📍 {predictions.location}
+                  </Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  Location: {predictions.location}
-                </Typography>
               </CardContent>
             </Card>
           </Grid>
 
           {Object.entries(predictions.predictions).map(([type, prediction]) => (
             <Grid item xs={12} sm={6} md={4} key={type}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'inline-block',
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: 1,
-                      backgroundColor: getRiskColor(prediction.riskLevel),
-                      color: 'white',
-                      mb: 2,
-                    }}
-                  >
-                    {prediction.riskLevel}
+              <Card sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardContent sx={{ p: 2.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Typography>
+                    <Chip
+                      label={prediction.riskLevel}
+                      color={getRiskColor(prediction.riskLevel) === '#4caf50' ? 'success' : 
+                             getRiskColor(prediction.riskLevel) === '#ff9800' ? 'warning' : 'error'}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Confidence: {prediction.confidence}%
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Probability: {prediction.probability}%
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {prediction.recommendation}
-                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <strong>Confidence:</strong> {prediction.confidence}%
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <strong>Probability:</strong> {prediction.probability}%
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Timeframe:</strong> {prediction.timeframe}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ 
+                    bgcolor: 'grey.50', 
+                    p: 1.5, 
+                    borderRadius: 1,
+                    borderLeft: `4px solid ${getRiskColor(prediction.riskLevel)}`
+                  }}>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                      {prediction.recommendation}
+                    </Typography>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>

@@ -7,6 +7,7 @@ class DisasterService {
     try {
       // Get current weather data
       const weatherData = await weatherService.getCurrentWeather(lat, lon);
+      console.log('Weather data received:', weatherData);
       
       // Get earthquake data
       const earthquakeData = await this.getEarthquakeData(lat, lon);
@@ -19,6 +20,9 @@ class DisasterService {
         earthquake: await predictionService.predictEarthquake(earthquakeData, lat, lon),
         wildfire: await predictionService.predictWildfire(weatherData, lat, lon)
       };
+      
+      // Log predictions for debugging
+      console.log('All predictions:', JSON.stringify(predictions, null, 2));
 
       // Calculate overall risk level
       const riskLevel = this.calculateOverallRisk(predictions);
@@ -28,6 +32,16 @@ class DisasterService {
         coordinates: { lat, lon },
         riskLevel,
         predictions,
+        weatherData: {
+          temperature: weatherData.temperature,
+          humidity: weatherData.humidity,
+          pressure: weatherData.pressure,
+          windSpeed: weatherData.windSpeed,
+          windDirection: weatherData.windDirection,
+          visibility: weatherData.visibility,
+          clouds: weatherData.clouds,
+          conditions: weatherData.conditions
+        },
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {

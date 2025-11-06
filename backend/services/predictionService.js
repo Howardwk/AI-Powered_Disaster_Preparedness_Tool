@@ -30,12 +30,13 @@ class PredictionService {
         lon
       );
 
-      if (mlPrediction) {
+      if (mlPrediction && mlPrediction.riskLevel) {
         // Use ML prediction
         return mlPrediction;
       }
 
       // Fallback to rule-based prediction
+      console.log('Using rule-based prediction for hurricane');
       // Hurricane prediction logic based on weather conditions
       let riskLevel = 'low';
       let confidence = 0.3;
@@ -63,22 +64,58 @@ class PredictionService {
 
       // Seasonality check (hurricane season: June-November in Northern Hemisphere)
       const month = new Date().getMonth() + 1;
-      if (month >= 6 && month <= 11 && lat > 0) {
+      const isHurricaneSeason = (month >= 6 && month <= 11 && lat > 0) || 
+                                ((month >= 12 || month <= 3) && lat < 0);
+      
+      if (isHurricaneSeason) {
         confidence += 0.1;
         factors.push('Currently in hurricane season');
       }
 
       confidence = Math.min(confidence, 1.0);
-
-      return {
+      
+      const result = {
         type: 'hurricane',
-        riskLevel,
-        confidence: Math.round(confidence * 100),
-        probability: Math.round(confidence * 60), // Percentage
-        factors,
-        recommendation: this.getRecommendation('hurricane', riskLevel),
-        timeframe: '24-48 hours'
+        riskLevel: riskLevel || 'low',
+        confidence: Math.round(confidence * 100) || 30,
+        probability: Math.round(confidence * 60) || 18, // Percentage
+        factors: factors || [],
+        recommendation: this.getRecommendation('hurricane', riskLevel) || 'Monitor weather updates.',
+        timeframe: '24-48 hours',
+        consideredFactors: {
+          windSpeed: {
+            value: weatherData.windSpeed || 0,
+            threshold: 25,
+            unit: 'm/s',
+            status: weatherData.windSpeed > 25 ? 'exceeded' : 'normal'
+          },
+          humidity: {
+            value: weatherData.humidity || 0,
+            threshold: 70,
+            unit: '%',
+            status: weatherData.humidity > 70 ? 'exceeded' : 'normal'
+          },
+          temperature: {
+            value: weatherData.temperature || 0,
+            threshold: 26,
+            unit: '°C',
+            status: weatherData.temperature > 26 ? 'exceeded' : 'normal'
+          },
+          location: {
+            value: `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`,
+            threshold: 'Hurricane-prone region (10-30°N, -100° to -60°W)',
+            status: (lat >= 10 && lat <= 30 && (lon >= -100 || lon <= -60)) ? 'in_zone' : 'outside_zone'
+          },
+          season: {
+            value: isHurricaneSeason ? 'Yes' : 'No',
+            threshold: 'Hurricane season (Jun-Nov in Northern Hemisphere)',
+            status: isHurricaneSeason ? 'in_season' : 'off_season'
+          }
+        }
       };
+      
+      console.log('Hurricane prediction result:', result);
+      return result;
     } catch (error) {
       console.error('Error in predictHurricane:', error);
       throw error;
@@ -138,7 +175,33 @@ class PredictionService {
         probability: Math.round(confidence * 50),
         factors,
         recommendation: this.getRecommendation('flood', riskLevel),
-        timeframe: '12-24 hours'
+        timeframe: '12-24 hours',
+        consideredFactors: {
+          humidity: {
+            value: weatherData.humidity || 0,
+            threshold: 80,
+            unit: '%',
+            status: weatherData.humidity > 80 ? 'exceeded' : 'normal'
+          },
+          visibility: {
+            value: weatherData.visibility || 10000,
+            threshold: 5000,
+            unit: 'm',
+            status: weatherData.visibility < 5000 ? 'exceeded' : 'normal'
+          },
+          cloudCover: {
+            value: weatherData.clouds || 0,
+            threshold: 80,
+            unit: '%',
+            status: weatherData.clouds > 80 ? 'exceeded' : 'normal'
+          },
+          pressure: {
+            value: weatherData.pressure || 1013,
+            threshold: 1000,
+            unit: 'hPa',
+            status: weatherData.pressure < 1000 ? 'exceeded' : 'normal'
+          }
+        }
       };
     } catch (error) {
       console.error('Error in predictFlood:', error);
@@ -186,7 +249,38 @@ class PredictionService {
         probability: Math.round(confidence * 40),
         factors,
         recommendation: this.getRecommendation('tornado', riskLevel),
-        timeframe: '6-12 hours'
+        timeframe: '6-12 hours',
+        consideredFactors: {
+          windSpeed: {
+            value: weatherData.windSpeed || 0,
+            threshold: 15,
+            unit: 'm/s',
+            status: weatherData.windSpeed > 15 ? 'exceeded' : 'normal'
+          },
+          humidity: {
+            value: weatherData.humidity || 0,
+            threshold: 60,
+            unit: '%',
+            status: weatherData.humidity > 60 ? 'exceeded' : 'normal'
+          },
+          temperature: {
+            value: weatherData.temperature || 0,
+            threshold: 24,
+            unit: '°C',
+            status: weatherData.temperature > 24 ? 'exceeded' : 'normal'
+          },
+          pressure: {
+            value: weatherData.pressure || 1013,
+            threshold: 1005,
+            unit: 'hPa',
+            status: weatherData.pressure < 1005 ? 'exceeded' : 'normal'
+          },
+          location: {
+            value: `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`,
+            threshold: 'Tornado Alley (30-50°N, -110° to -85°W)',
+            status: (lat >= 30 && lat <= 50 && lon >= -110 && lon <= -85) ? 'in_zone' : 'outside_zone'
+          }
+        }
       };
     } catch (error) {
       console.error('Error in predictTornado:', error);
@@ -216,25 +310,27 @@ class PredictionService {
       let factors = [];
 
       // Check recent earthquake activity
-      if (earthquakeData.features && earthquakeData.features.length > 0) {
-        const recentQuakes = earthquakeData.features.filter(feature => {
-          const quakeTime = new Date(feature.properties.time);
-          const hoursAgo = (Date.now() - quakeTime.getTime()) / (1000 * 60 * 60);
-          return hoursAgo < 48; // Last 48 hours
-        });
+      const recentQuakes = earthquakeData.features && earthquakeData.features.length > 0
+        ? earthquakeData.features.filter(feature => {
+            const quakeTime = new Date(feature.properties.time);
+            const hoursAgo = (Date.now() - quakeTime.getTime()) / (1000 * 60 * 60);
+            return hoursAgo < 48; // Last 48 hours
+          })
+        : [];
+      
+      const maxMagnitude = recentQuakes.length > 0
+        ? Math.max(...recentQuakes.map(q => q.properties.mag || 0))
+        : 0;
 
-        if (recentQuakes.length > 0) {
-          const maxMagnitude = Math.max(...recentQuakes.map(q => q.properties.mag || 0));
-          
-          if (maxMagnitude > 4) {
-            riskLevel = 'high';
-            confidence += 0.4;
-            factors.push(`Recent earthquake activity (M${maxMagnitude.toFixed(1)})`);
-          } else if (maxMagnitude > 3) {
-            riskLevel = 'moderate';
-            confidence += 0.2;
-            factors.push(`Recent moderate earthquake activity`);
-          }
+      if (recentQuakes.length > 0) {
+        if (maxMagnitude > 4) {
+          riskLevel = 'high';
+          confidence += 0.4;
+          factors.push(`Recent earthquake activity (M${maxMagnitude.toFixed(1)})`);
+        } else if (maxMagnitude > 3) {
+          riskLevel = 'moderate';
+          confidence += 0.2;
+          factors.push(`Recent moderate earthquake activity`);
         }
       }
 
@@ -253,7 +349,25 @@ class PredictionService {
         probability: Math.round(confidence * 30), // Earthquakes are harder to predict
         factors,
         recommendation: this.getRecommendation('earthquake', riskLevel),
-        timeframe: 'Unpredictable'
+        timeframe: 'Unpredictable',
+        consideredFactors: {
+          recentActivity: {
+            value: recentQuakes.length > 0 ? `${recentQuakes.length} quakes in last 48h` : 'No recent activity',
+            threshold: 'Recent earthquakes within 48 hours',
+            status: recentQuakes.length > 0 ? 'active' : 'inactive'
+          },
+          maxMagnitude: {
+            value: maxMagnitude > 0 ? `M${maxMagnitude.toFixed(1)}` : 'N/A',
+            threshold: 'Magnitude > 3.0',
+            unit: 'Richter scale',
+            status: maxMagnitude > 4 ? 'high' : maxMagnitude > 3 ? 'moderate' : 'low'
+          },
+          location: {
+            value: `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`,
+            threshold: 'Seismically active region',
+            status: this.isInSeismicZone(lat, lon) ? 'in_zone' : 'outside_zone'
+          }
+        }
       };
     } catch (error) {
       console.error('Error in predictEarthquake:', error);
@@ -301,7 +415,33 @@ class PredictionService {
         probability: Math.round(confidence * 55),
         factors,
         recommendation: this.getRecommendation('wildfire', riskLevel),
-        timeframe: '12-72 hours'
+        timeframe: '12-72 hours',
+        consideredFactors: {
+          temperature: {
+            value: weatherData.temperature || 0,
+            threshold: 30,
+            unit: '°C',
+            status: weatherData.temperature > 30 ? 'exceeded' : 'normal'
+          },
+          humidity: {
+            value: weatherData.humidity || 0,
+            threshold: 30,
+            unit: '%',
+            status: weatherData.humidity < 30 ? 'exceeded' : 'normal',
+            note: 'Lower is worse for wildfires'
+          },
+          windSpeed: {
+            value: weatherData.windSpeed || 0,
+            threshold: 20,
+            unit: 'm/s',
+            status: weatherData.windSpeed > 20 ? 'exceeded' : 'normal'
+          },
+          combinedRisk: {
+            value: weatherData.temperature > 25 && weatherData.humidity < 40 ? 'High' : 'Normal',
+            threshold: 'Temp > 25°C AND Humidity < 40%',
+            status: (weatherData.temperature > 25 && weatherData.humidity < 40) ? 'critical' : 'normal'
+          }
+        }
       };
     } catch (error) {
       console.error('Error in predictWildfire:', error);

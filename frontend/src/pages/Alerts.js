@@ -56,12 +56,14 @@ const Alerts = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Disaster Alerts
-      </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Get real-time alerts for potential disasters in your area.
-      </Typography>
+      <Box sx={{ mb: 4, textAlign: 'center', bgcolor: 'primary.main', color: 'white', p: 4, borderRadius: 3, boxShadow: 3 }}>
+        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+          🔔 Disaster Alerts
+        </Typography>
+        <Typography variant="h6" sx={{ opacity: 0.9 }}>
+          Real-time alerts for potential disasters in your area
+        </Typography>
+      </Box>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <form onSubmit={handleSubmit}>
