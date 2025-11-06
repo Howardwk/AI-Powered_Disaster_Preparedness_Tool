@@ -30,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/disaster-prep';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/weather';
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -45,6 +45,22 @@ mlModelManager.initialize().catch(err => {
   console.warn('ML models initialization failed (using rule-based predictions):', err.message);
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Disaster Preparedness API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      predictions: '/api/disasters/predict?lat=0&lon=0',
+      plans: '/api/plans',
+      alerts: '/api/alerts',
+      ml: '/api/ml/status'
+    },
+    documentation: 'See /api/health for API status'
+  });
+});
+
 // Routes
 app.use('/api/disasters', disasterRoutes);
 app.use('/api/plans', planRoutes);
@@ -56,7 +72,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Disaster Preparedness API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
 

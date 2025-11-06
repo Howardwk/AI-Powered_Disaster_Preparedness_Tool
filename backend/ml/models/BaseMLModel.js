@@ -3,10 +3,16 @@ let tf;
 try {
   // Try native bindings (faster, but may not work on all systems)
   tf = require('@tensorflow/tfjs-node');
-  console.log('Using TensorFlow.js with native bindings');
+  // Verify native backend is available
+  if (tf.getBackend() === 'tensorflow') {
+    console.log('✅ Using TensorFlow.js with native Node.js backend (optimized)');
+  } else {
+    console.log('✅ Using TensorFlow.js Node.js backend');
+  }
 } catch (error) {
   // Fallback to CPU-only version (works everywhere but slower)
-  console.warn('TensorFlow.js native bindings not available, using CPU-only version');
+  console.warn('⚠️ TensorFlow.js native bindings not available, using CPU-only version');
+  console.warn('   This is slower. To fix: npm rebuild @tensorflow/tfjs-node');
   try {
     tf = require('@tensorflow/tfjs');
     // Set backend to CPU
