@@ -28,7 +28,6 @@ npm install
 ### Backend (.env)
 ```bash
 cd backend
-cp .env.example .env
 ```
 
 Edit `.env`:
