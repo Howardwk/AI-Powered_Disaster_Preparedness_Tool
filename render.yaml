@@ -1,18 +1,44 @@
-# Render Blueprint for Disaster Preparedness Tool - Frontend Only
-# Backend is deployed on Railway
+# Render Blueprint for Disaster Preparedness Tool
+# Deploys both Backend and Frontend
 
 services:
+  # Backend API
+  - type: web
+    name: disaster-prep-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+        # Set to: mongodb+srv://wanyehowa0:gosg2407@cluster0.kmzxbqp.mongodb.net/weather?retryWrites=true&w=majority
+      - key: OPENWEATHER_API_KEY
+        sync: false
+        # Set to your OpenWeatherMap API key
+      - key: FRONTEND_URL
+        sync: false
+        # Will be set after frontend deploys - use frontend URL from Render
+      - key: USE_ML_MODELS
+        value: false
+
   # Frontend (Static Site)
   - type: web
     name: disaster-prep-frontend
     env: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/build
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
         sync: false
-        # Set this to your Railway backend URL + /api
-        # Example: https://your-backend-name.up.railway.app/api
+        # Set to: https://disaster-prep-backend.onrender.com/api
+        # Will use the backend service URL from Render
 
 
 
