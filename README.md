@@ -133,51 +133,6 @@ npm start
 
 Visit `http://localhost:3000` in your browser.
 
-## Deployment
-
-### Option 1: Render Blueprint (Recommended)
-
-1. Push code to GitHub.
-2. From Render dashboard choose **Blueprint** and point to this repo (Render auto-detects `render.yaml`).
-3. Render provisions two services:
-   - `disaster-prep-backend` (Node web service)  
-     - Root dir: `backend`  
-     - Build: `npm install`  
-     - Start: `npm start`  
-     - Required env vars:  
-       ```
-       NODE_ENV=production
-       PORT=10000
-       MONGODB_URI=mongodb+srv://wanyehowa0:gosg2407@cluster0.kmzxbqp.mongodb.net/weather?retryWrites=true&w=majority
-       OPENWEATHER_API_KEY=<your-openweather-key>
-       FRONTEND_URL=https://disaster-prep-frontend.onrender.com
-       USE_ML_MODELS=false
-       ```
-   - `disaster-prep-frontend` (static site)  
-     - Root dir: `frontend`  
-     - Build: `npm install && npm run build`  
-     - Publish dir: `build`  
-     - Env vars:  
-       ```
-       REACT_APP_API_URL=https://disaster-prep-backend.onrender.com/api
-       ```
-4. Deploy both services, then update `FRONTEND_URL` and `REACT_APP_API_URL` with the live URLs Render assigns if they differ.
-
-**Live URLs (current deployment):**
-- Frontend: `https://disaster-prep-frontend.onrender.com`
-- Backend: `https://disaster-prep-backend.onrender.com`
-- API Health: `https://disaster-prep-backend.onrender.com/api/health`
-
-### Option 2: Vercel (Frontend) + Railway (Backend)
-
-- Deploy backend from `backend/` directory on Railway (Node service, `npm start`, same env vars as above).
-- Deploy frontend to Vercel/Netlify with `npm install && npm run build`.
-- Update `REACT_APP_API_URL` to your Railway backend URL + `/api`.
-
-### Option 3: Heroku or Other Hosts
-
-See detailed instructions in `DEPLOYMENT.md`.
-
 ## API Endpoints
 
 - `GET /api/disasters/predict` - Get disaster predictions for a location
